@@ -1,0 +1,93 @@
+{
+	"name": "LoggerAndErrorHandler",
+	"properties": {
+		"activities": [
+			{
+				"name": "Sucesso",
+				"type": "IfCondition",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(0,pipeline().parameters.errorCode)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "LogErro",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/dmoreto@governosp.onmicrosoft.com/LogErroDefault"
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureDatabricks1",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "ErrorHandler",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/dmoreto@governosp.onmicrosoft.com/ErrorHandlerDefault"
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureDatabricks1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "LogSucesso",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Users/dmoreto@governosp.onmicrosoft.com/LogErroDefault"
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureDatabricks1",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"errorCode": {
+				"type": "int"
+			},
+			"logMessage": {
+				"type": "string"
+			}
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

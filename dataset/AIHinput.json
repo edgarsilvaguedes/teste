@@ -1,0 +1,34 @@
+{
+	"name": "AIHinput",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "aihLinked",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "aihTeste.csv",
+				"folderPath": "sesAIH",
+				"container": "sandbox"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "DRS Ocor",
+				"type": "String"
+			},
+			{
+				"name": "Valor Total",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

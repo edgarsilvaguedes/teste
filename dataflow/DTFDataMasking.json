@@ -1,0 +1,32 @@
+{
+	"name": "DTFDataMasking",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Input",
+						"type": "DatasetReference"
+					},
+					"name": "Input"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Output",
+						"type": "DatasetReference"
+					},
+					"name": "Output"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DRCDataMasking"
+				}
+			],
+			"script": "source(output(\n\t\t{Name } as string,\n\t\tCPF as string,\n\t\tBirthday as string,\n\t\tAddress as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: true,\n\tlimit: 100,\n\tinferDriftedColumnTypes: true) ~> Input\nInput derive(CPF = concat(left(toString(CPF),3), \"XXXXXX-\", right(toString(CPF),2)),\n\t\tBirthday = concatWS(\"/**/\",left(Birthday, 2), right(Birthday, 4)),\n\t\tAddress = sha1(Address)) ~> DRCDataMasking\nDRCDataMasking sink(input(\n\t\tColumn_1 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Output"
+		}
+	}
+}

@@ -1,0 +1,379 @@
+{
+	"name": "Teste_Handler_2",
+	"properties": {
+		"activities": [
+			{
+				"name": "errorHandlingParameters",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "errorHandling",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "loopDataMask",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "errorHandlingParameters",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(variables('repeat'))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "SucessoDM",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "setErrorCodeDM",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(variables('errorCode'),'0')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "DMFilter",
+										"type": "Filter",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"items": {
+												"value": "@activity('errorHandlingParameters').output.value",
+												"type": "Expression"
+											},
+											"condition": {
+												"value": "@or(equals(variables('errorCode'),item().code),equals('default',item().code))",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "dataMaskErrorHandler",
+										"type": "DatabricksNotebook",
+										"dependsOn": [
+											{
+												"activity": "DMFilter",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"notebookPath": "/Users/otavio.ribeiro.lopes@governosp.onmicrosoft.com/ErrorHandlerDefault_bkp",
+											"baseParameters": {
+												"cntRepeat": {
+													"value": "@variables('cntRepeat')",
+													"type": "Expression"
+												},
+												"log": {
+													"value": "@variables('log')",
+													"type": "Expression"
+												},
+												"actions": {
+													"value": "@{activity('DMFilter').output.Value}",
+													"type": "Expression"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "AzureDatabricks2",
+											"type": "LinkedServiceReference"
+										}
+									},
+									{
+										"name": "setRepeatDataMask",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "dataMaskErrorHandler",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": {
+												"value": "@activity('dataMaskErrorHandler').output.runOutput.retry",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "setRepeatFalseDataMask",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "dataMaskErrorHandler",
+												"dependencyConditions": [
+													"Failed"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": false
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "setRepeatFalseDM",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": false
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "retryDM",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "SucessoDM",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@variables('repeat')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "resetLogDM",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "log",
+											"value": " "
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "incrementCntDM",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "incrementCntAuxDM",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "cntRepeat",
+											"value": {
+												"value": "@variables('cntRepeatAux')",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "WaitDM",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": {
+												"value": "@activity('dataMaskErrorHandler').output.RunOutput.wait",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "incrementCntAuxDM",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "cntRepeatAux",
+											"value": {
+												"value": "@string(add(int(variables('cntRepeat')),1))",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "killDM",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "retryDM",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(or(equals(variables('errorCode'),'0'),variables('repeat')))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "killerDM",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": "kill"
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "DTFDataMasking",
+							"type": "ExecuteDataFlow",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataflow": {
+									"referenceName": "DTFDataMasking",
+									"type": "DataFlowReference"
+								},
+								"compute": {
+									"coreCount": 8,
+									"computeType": "General"
+								}
+							}
+						},
+						{
+							"name": "setErrorCodeDM",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "DTFDataMasking",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "errorCode",
+								"value": {
+									"value": "@if\n(\n\tequals\n\t(\n\t\tcoalesce\n\t\t(\n\t\t\tactivity('DTFDataMasking').output.runStatus.dsl,'null'\n\t\t),\n\t\t'null'\n\t),\n\t'1',\n\t'0'\n)",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			},
+			{
+				"name": "resetRepeatDM",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "loopDataMask",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "repeat",
+					"value": true
+				}
+			}
+		],
+		"variables": {
+			"errorCode": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"log": {
+				"type": "String",
+				"defaultValue": " "
+			},
+			"cntRepeat": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"repeat": {
+				"type": "Boolean",
+				"defaultValue": true
+			},
+			"cntRepeatAux": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

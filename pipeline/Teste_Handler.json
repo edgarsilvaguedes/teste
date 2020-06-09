@@ -1,0 +1,339 @@
+{
+	"name": "Teste_Handler",
+	"properties": {
+		"activities": [
+			{
+				"name": "errorHandlingParameters",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "errorHandling",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "loopAtividade1",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "errorHandlingParameters",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@not(variables('repeat'))",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Set variable1",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "erroMock",
+								"value": "1"
+							}
+						},
+						{
+							"name": "Sucesso",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Set variable1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(variables('erroMock'),'0')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "filtro_copy1",
+										"type": "Filter",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"items": {
+												"value": "@activity('errorHandlingParameters').output.value",
+												"type": "Expression"
+											},
+											"condition": {
+												"value": "@or(equals(variables('erroMock'),item().code),equals('default',item().code))",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Notebook1",
+										"type": "DatabricksNotebook",
+										"dependsOn": [
+											{
+												"activity": "filtro_copy1",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"notebookPath": "/Users/otavio.ribeiro.lopes@governosp.onmicrosoft.com/ErrorHandlerDefault_bkp",
+											"baseParameters": {
+												"cntRepeat": {
+													"value": "@variables('cntRepeat')",
+													"type": "Expression"
+												},
+												"log": {
+													"value": "@variables('log')",
+													"type": "Expression"
+												},
+												"actions": {
+													"value": "@{activity('filtro_copy1').output.Value}",
+													"type": "Expression"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "AzureDatabricks2",
+											"type": "LinkedServiceReference"
+										}
+									},
+									{
+										"name": "setRepeat",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Notebook1",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": {
+												"value": "@activity('Notebook1').output.runOutput.retry",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "setRepeat_copy1",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "Notebook1",
+												"dependencyConditions": [
+													"Failed"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": false
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Set variable2",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": false
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "retry",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Sucesso",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@variables('repeat')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "resetLog",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "log",
+											"value": " "
+										}
+									},
+									{
+										"name": "resetRepeat",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": true
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "incrementCnt",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "incrementCntAux",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "cntRepeat",
+											"value": {
+												"value": "@variables('cntRepeatAux')",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "Wait2",
+										"type": "Wait",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"waitTimeInSeconds": {
+												"value": "@int(activity('Notebook1').output.runOutput.wait)",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "incrementCntAux",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "cntRepeatAux",
+											"value": {
+												"value": "@string(add(int(variables('cntRepeat')),1))",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "Kill",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "retry",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(or(equals(variables('erroMock'),'0'),variables('repeat')))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Set variable3",
+										"type": "SetVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "repeat",
+											"value": "kill"
+										}
+									}
+								]
+							}
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			}
+		],
+		"variables": {
+			"erroMock": {
+				"type": "String",
+				"defaultValue": "1"
+			},
+			"log": {
+				"type": "String",
+				"defaultValue": " "
+			},
+			"cntRepeat": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"repeat": {
+				"type": "Boolean",
+				"defaultValue": true
+			},
+			"cntRepeatAux": {
+				"type": "String",
+				"defaultValue": "0"
+			}
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

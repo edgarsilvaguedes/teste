@@ -1,0 +1,109 @@
+{
+	"name": "errorHandling",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "errorHandling.json",
+				"folderPath": "pipeline_teste",
+				"container": "sandbox"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"1": {
+					"type": "object",
+					"properties": {
+						"retry": {
+							"type": "object",
+							"properties": {
+								"maxRetries": {
+									"type": "integer"
+								},
+								"wait": {
+									"type": "integer"
+								},
+								"log": {
+									"type": "string"
+								},
+								"logMax": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"2": {
+					"type": "object",
+					"properties": {
+						"email": {
+							"type": "object",
+							"properties": {
+								"address": {
+									"type": "string"
+								},
+								"message": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"3": {
+					"type": "object",
+					"properties": {
+						"log": {
+							"type": "object",
+							"properties": {
+								"message": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"4": {
+					"type": "object"
+				},
+				"5": {
+					"type": "object",
+					"properties": {
+						"retry": {
+							"type": "object",
+							"properties": {
+								"maxRetries": {
+									"type": "integer"
+								},
+								"wait": {
+									"type": "integer"
+								},
+								"log": {
+									"type": "string"
+								},
+								"logMax": {
+									"type": "string"
+								}
+							}
+						},
+						"log": {
+							"type": "object",
+							"properties": {
+								"message": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

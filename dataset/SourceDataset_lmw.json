@@ -1,0 +1,22 @@
+{
+	"name": "SourceDataset_lmw",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"container": "sandbox"
+			},
+			"compression": {
+				"type": "GZip",
+				"level": "Fastest"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
